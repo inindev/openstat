@@ -1,0 +1,547 @@
+From 069b46c41ca6e634844e24d1a611b6506519f5a7 Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Sun, 11 Apr 2021 18:17:30 -0400
+Subject: [PATCH 4/4] board files for resideo rth9580wf01 thermostat
+
+---
+ contrib/board/Config.in.board                 |   1 +
+ contrib/board/Config.in.boardname             |   1 +
+ .../board/resideo/rth9580wf01/Config.in.board |  11 ++
+ .../resideo/rth9580wf01/Config.in.boardname   |   2 +
+ .../resideo/rth9580wf01/Config.in.linux_arg   |   2 +
+ contrib/board/resideo/rth9580wf01/board.mk    |   7 +
+ .../board/resideo/rth9580wf01/rth9580wf01.c   | 181 ++++++++++++++++++
+ .../board/resideo/rth9580wf01/rth9580wf01.h   |  86 +++++++++
+ .../rth9580wf01/rth9580wf01_uboot_defconfig   |   6 +
+ contrib/driver/Config.in.driver               |   5 +
+ contrib/driver/driver.mk                      |   3 +-
+ contrib/driver/sdrsdramc.c                    |  94 +++++++++
+ contrib/include/contrib_board.h               |   4 +
+ contrib/include/sdrsdramc.h                   |  15 ++
+ 14 files changed, 417 insertions(+), 1 deletion(-)
+ create mode 100644 contrib/board/resideo/rth9580wf01/Config.in.board
+ create mode 100644 contrib/board/resideo/rth9580wf01/Config.in.boardname
+ create mode 100644 contrib/board/resideo/rth9580wf01/Config.in.linux_arg
+ create mode 100644 contrib/board/resideo/rth9580wf01/board.mk
+ create mode 100644 contrib/board/resideo/rth9580wf01/rth9580wf01.c
+ create mode 100644 contrib/board/resideo/rth9580wf01/rth9580wf01.h
+ create mode 100644 contrib/board/resideo/rth9580wf01/rth9580wf01_uboot_defconfig
+ create mode 100644 contrib/driver/sdrsdramc.c
+ create mode 100644 contrib/include/sdrsdramc.h
+
+diff --git a/contrib/board/Config.in.board b/contrib/board/Config.in.board
+index 7e6eb97..355ef56 100644
+--- a/contrib/board/Config.in.board
++++ b/contrib/board/Config.in.board
+@@ -10,3 +10,4 @@ source "contrib/board/corewind/core9g25/Config.in.board"
+ source "contrib/board/axentia/sama5d3_linea/Config.in.board"
+ source "contrib/board/mini-box/pico_sam9g45/Config.in.board"
+ source "contrib/board/stephan/sama5d3_stephan/Config.in.board"
++source "contrib/board/resideo/rth9580wf01/Config.in.board"
+diff --git a/contrib/board/Config.in.boardname b/contrib/board/Config.in.boardname
+index 123ec74..3fe5b6d 100644
+--- a/contrib/board/Config.in.boardname
++++ b/contrib/board/Config.in.boardname
+@@ -10,3 +10,4 @@ source "contrib/board/corewind/core9g25/Config.in.boardname"
+ source "contrib/board/axentia/sama5d3_linea/Config.in.boardname"
+ source "contrib/board/mini-box/pico_sam9g45/Config.in.boardname"
+ source "contrib/board/stephan/sama5d3_stephan/Config.in.boardname"
++source "contrib/board/resideo/rth9580wf01/Config.in.boardname"
+diff --git a/contrib/board/resideo/rth9580wf01/Config.in.board b/contrib/board/resideo/rth9580wf01/Config.in.board
+new file mode 100644
+index 0000000..1cc7403
+--- /dev/null
++++ b/contrib/board/resideo/rth9580wf01/Config.in.board
+@@ -0,0 +1,11 @@
++config	RTH9580WF01
++	bool "rth9580wf01"
++	select AT91SAM9X5
++	select SDRSDRAM
++	select ALLOW_DATAFLASH
++	select ALLOW_CPU_CLK_400MHZ
++	select ALLOW_CRYSTAL_12_000MHZ
++	select ALLOW_BOOT_FROM_DATAFLASH_CS0
++	select SUPPORT_BUS_SPEED_133MHZ
++	help
++	    Use the Resideo RTH9580WF01 board
+diff --git a/contrib/board/resideo/rth9580wf01/Config.in.boardname b/contrib/board/resideo/rth9580wf01/Config.in.boardname
+new file mode 100644
+index 0000000..9471520
+--- /dev/null
++++ b/contrib/board/resideo/rth9580wf01/Config.in.boardname
+@@ -0,0 +1,2 @@
++config BOARDNAME
++	default "rth9580wf01"	if RTH9580WF01
+diff --git a/contrib/board/resideo/rth9580wf01/Config.in.linux_arg b/contrib/board/resideo/rth9580wf01/Config.in.linux_arg
+new file mode 100644
+index 0000000..9e81030
+--- /dev/null
++++ b/contrib/board/resideo/rth9580wf01/Config.in.linux_arg
+@@ -0,0 +1,2 @@
++config LINUX_KERNEL_ARG_STRING
++	default "mem=16M console=ttyS0,115200 earlyprintk root=/dev/mtdblk0p2 rw rootwait"
+diff --git a/contrib/board/resideo/rth9580wf01/board.mk b/contrib/board/resideo/rth9580wf01/board.mk
+new file mode 100644
+index 0000000..b50522c
+--- /dev/null
++++ b/contrib/board/resideo/rth9580wf01/board.mk
+@@ -0,0 +1,7 @@
++CPPFLAGS += \
++	-DCONFIG_RTH9580WF01 \
++	-mcpu=arm926ej-s
++
++ASFLAGS += \
++	-DCONFIG_RTH9580WF01 \
++	-mcpu=arm926ej-s
+diff --git a/contrib/board/resideo/rth9580wf01/rth9580wf01.c b/contrib/board/resideo/rth9580wf01/rth9580wf01.c
+new file mode 100644
+index 0000000..02b7b4c
+--- /dev/null
++++ b/contrib/board/resideo/rth9580wf01/rth9580wf01.c
+@@ -0,0 +1,181 @@
++/* ----------------------------------------------------------------------------
++ *         ATMEL Microcontroller Software Support
++ * ----------------------------------------------------------------------------
++ * Copyright (c) 2008, Atmel Corporation
++ *
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the disclaimer below.
++ *
++ * Atmel's name may not be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * DISCLAIMER: THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
++ * DISCLAIMED. IN NO EVENT SHALL ATMEL BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
++ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
++ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++#include "common.h"
++#include "hardware.h"
++#include "arch/at91_ccfg.h"
++#include "arch/at91_rstc.h"
++#include "arch/at91_pmc/pmc.h"
++#include "arch/at91_pio.h"
++#include "arch/at91_ddrsdrc.h"
++#include "gpio.h"
++#include "pmc.h"
++#include "usart.h"
++#include "debug.h"
++#include "sdrsdramc.h"
++#include "timer.h"
++#include "watchdog.h"
++#include "string.h"
++#include "rth9580wf01.h"
++
++
++static void at91_dbgu_hw_init(void)
++{
++	/* Configure DBGU pins */
++	const struct pio_desc dbgu_pins[] = {
++		{"RXD", AT91C_PIN_PA(9), 0, PIO_DEFAULT, PIO_PERIPH_A},
++		{"TXD", AT91C_PIN_PA(10), 0, PIO_DEFAULT, PIO_PERIPH_A},
++		{(char *)0, 0, 0, PIO_DEFAULT, PIO_PERIPH_A},
++	};
++
++	pmc_enable_periph_clock(AT91C_ID_PIOA_B, PMC_PERIPH_CLK_DIVIDER_NA);
++	pio_configure(dbgu_pins);
++}
++
++static void initialize_dbgu(void)
++{
++	at91_dbgu_hw_init();
++	usart_init(BAUDRATE(MASTER_CLOCK, BAUD_RATE));
++}
++
++/* using ISSI IS42S16800F */
++static void sdrsdramc_reg_config(struct sdrsdramc_register *sdrsdramc_cfg)
++{
++	sdrsdramc_cfg->mdr = (AT91C_DDRC2_DBW_16_BITS
++				| AT91C_DDRC2_MD_SDR_SDRAM);
++
++	sdrsdramc_cfg->cr = (AT91C_DDRC2_NC_DDR10_SDR9            /* 9 column bits (512) */
++				| AT91C_DDRC2_NR_12               /* 12 row bits (4K)    */
++				| AT91C_DDRC2_CAS_2               /* CAS Latency 2       */
++				| AT91C_DDRC2_NB_BANKS_4          /* 4 banks             */
++				| AT91C_DDRC2_DISABLE_RESET_DLL
++				| AT91C_DDRC2_DECOD_INTERLEAVED); /* interleaved decode  */
++
++	/*
++	 * SDRAM devices require a refresh of all rows every 64 ms. The value to be loaded depends
++	 * on the DDRSDRC clock frequency (MCK: Master Clock) and the number of rows in the device.
++	 *
++	 *    64,000us / 4,096 rows = 15.625us
++	 *    64ms / 4096 rows x MCK = (64/1000) / 4096 x MCK = MCK / 64,000
++	 */
++	sdrsdramc_cfg->rtr = MASTER_CLOCK / 64000;  /* 15.625us: 132,096,000 / 64,000 = 2064 */
++	                                            /*       or:   15.625us x 132.096 = 2064 */
++
++	/* IS42S16800F: 16MB (128Mb), 2Mb x16 x4 banks */
++	/* one clock cycle @ 133 MHz = 7.5 ns               CAS Latency = 2      */
++	sdrsdramc_cfg->t0pr = (AT91C_DDRC2_TRAS_(6)      /* 6 * 7.5 = 45ns  (37) */
++				| AT91C_DDRC2_TRCD_(2)   /* 2 * 7.5 = 15ns  (15) */
++				| AT91C_DDRC2_TWR_(2)    /* 2 * 7.5 = 15ns       */
++				| AT91C_DDRC2_TRC_(8)    /* 8 * 7.5 = 60ns  (60) */
++				| AT91C_DDRC2_TRP_(2)    /* 2 * 7.5 = 15ns  (15) */
++				| AT91C_DDRC2_TRRD_(2)   /* 2 * 7.5 = 15ns  (14) */
++				| AT91C_DDRC2_TMRD_(2)); /* 2 * 7.5 = 15ns  (14) */
++
++	sdrsdramc_cfg->t1pr = (AT91C_DDRC2_TXP_(2)        /*  2 clock cycles     */
++				| AT91C_DDRC2_TXSRD_(200) /* 200 clock cycles    */
++				| AT91C_DDRC2_TXSNR_(19)  /* 19 * 7.5 = 142.5 ns */
++				| AT91C_DDRC2_TRFC_(18)); /* 18 * 7.5 = 135 ns   */
++}
++
++static void sdrsdramc_init(void)
++{
++	unsigned long csa;
++	struct sdrsdramc_register sdrsdramc_reg;
++
++	sdrsdramc_reg_config(&sdrsdramc_reg);
++
++	/* ENABLE DDR2 clock */
++	pmc_enable_system_clock(AT91C_PMC_DDR);
++
++	/* Chip select 1 is for DDR2/SDRAM */
++	csa = readl(AT91C_BASE_CCFG + CCFG_EBICSA);
++	csa |= AT91C_EBI_CS1A_SDRAMC;
++	csa &= ~AT91C_EBI_DBPUC;
++	csa |= AT91C_EBI_DBPDC;
++	csa |= AT91C_EBI_DRV_HD;
++
++	writel(csa, AT91C_BASE_CCFG + CCFG_EBICSA);
++
++	/* SDR SDRAM controller initialize */
++	sdrsdramc_initialize(AT91C_BASE_CS1, &sdrsdramc_reg);
++}
++
++#ifdef CONFIG_HW_INIT
++void hw_init(void)
++{
++	/* Disable watchdog */
++	at91_disable_wdt();
++
++	/*
++	 * At this stage the main oscillator is
++	 * supposed to be enabled PCK = MCK = MOSC
++	 */
++	pmc_init_pll(0);
++
++	/* Configure PLLA = MOSC * (PLL_MULA + 1) / PLL_DIVA */
++	pmc_cfg_plla(PLLA_SETTINGS);
++
++	/* Switch PCK/MCK on Main clock output */
++	pmc_mck_cfg_set(0, BOARD_PRESCALER_MAIN_CLOCK,
++			AT91C_PMC_PLLADIV2 | AT91C_PMC_MDIV | AT91C_PMC_CSS);
++
++	/* Switch PCK/MCK on PLLA output */
++	pmc_mck_cfg_set(0, BOARD_PRESCALER_PLLA,
++			AT91C_PMC_PLLADIV2 | AT91C_PMC_MDIV | AT91C_PMC_CSS);
++
++	/* Enable External Reset */
++	writel(AT91C_RSTC_KEY_UNLOCK | AT91C_RSTC_URSTEN, AT91C_BASE_RSTC + RSTC_RMR);
++
++	/* Init timer */
++	timer_init();
++
++	/* Initialize dbgu */
++	initialize_dbgu();
++
++	/* Initialize SDR SDRAM Controller */
++	sdrsdramc_init();
++}
++#endif /* #ifdef CONFIG_HW_INIT */
++
++#ifdef CONFIG_DATAFLASH
++void at91_spi0_hw_init(void)
++{
++	/* Configure PINs for SPI0 */
++	const struct pio_desc spi0_pins[] = {
++		{"MISO",	AT91C_PIN_PA(11),	0, PIO_DEFAULT, PIO_PERIPH_A},
++		{"MOSI",	AT91C_PIN_PA(12),	0, PIO_DEFAULT, PIO_PERIPH_A},
++		{"SPCK",	AT91C_PIN_PA(13),	0, PIO_DEFAULT, PIO_PERIPH_A},
++		{"NPCS",	CONFIG_SYS_SPI_PCS,	1, PIO_DEFAULT, PIO_OUTPUT},
++		{(char *)0,	0, 0, PIO_DEFAULT, PIO_PERIPH_A},
++	};
++
++	pmc_enable_periph_clock(AT91C_ID_PIOA_B, PMC_PERIPH_CLK_DIVIDER_NA);
++	pio_configure(spi0_pins);
++
++	pmc_enable_periph_clock(AT91C_ID_SPI0, PMC_PERIPH_CLK_DIVIDER_NA);
++}
++#endif	/* #ifdef CONFIG_DATAFLASH */
+diff --git a/contrib/board/resideo/rth9580wf01/rth9580wf01.h b/contrib/board/resideo/rth9580wf01/rth9580wf01.h
+new file mode 100644
+index 0000000..8c9c58e
+--- /dev/null
++++ b/contrib/board/resideo/rth9580wf01/rth9580wf01.h
+@@ -0,0 +1,86 @@
++/* ----------------------------------------------------------------------------
++ *         ATMEL Microcontroller Software Support
++ * ----------------------------------------------------------------------------
++ * Copyright (c) 2010, Atmel Corporation
++ *
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are met:
++ *
++ * - Redistributions of source code must retain the above copyright notice,
++ * this list of conditions and the disclaimer below.
++ *
++ * Atmel's name may not be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * DISCLAIMER: THIS SOFTWARE IS PROVIDED BY ATMEL "AS IS" AND ANY EXPRESS OR
++ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
++ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT ARE
++ * DISCLAIMED. IN NO EVENT SHALL ATMEL BE LIABLE FOR ANY DIRECT, INDIRECT,
++ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
++ * OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
++ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
++ * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
++ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++#ifndef __RTH9580WF01_H__
++#define __RTH9580WF01_H__
++
++/*
++ * PMC Settings
++ *
++ * The main oscillator is enabled as soon as possible in the lowlevel_clock_init
++ * and MCK is switched on the main oscillator.
++ * PLL initialization is done later in the hw_init() function
++ */
++#define MASTER_CLOCK		132096000
++
++#define BAUD_RATE		115200
++#define BOARD_MAINOSC		12000000
++
++/* PCK = 396MHz, MCK = 132MHz */
++#define PLLA_MULA		199
++#define PLLA_DIVA		3
++#define BOARD_MCK		((unsigned long)(((BOARD_MAINOSC / \
++					PLLA_DIVA) * (PLLA_MULA + 1)) / 2 / 3))
++#define BOARD_OSCOUNT		(AT91C_CKGR_OSCOUNT & (64 << 8))
++#define BOARD_CKGR_PLLA		(AT91C_CKGR_SRCA | AT91C_CKGR_OUTA_0)
++#define BOARD_PLLACOUNT		(0x3F << 8)
++#define BOARD_MULA		(AT91C_CKGR_MULA & (PLLA_MULA << 16))
++#define BOARD_DIVA		(AT91C_CKGR_DIVA & PLLA_DIVA)
++
++#define BOARD_PRESCALER_MAIN_CLOCK	(AT91C_PMC_PLLADIV2_2 \
++					| AT91C_PMC_MDIV_3 \
++					| AT91C_PMC_CSS_MAIN_CLK)
++
++#define BOARD_PRESCALER_PLLA		(AT91C_PMC_PLLADIV2_2 \
++					| AT91C_PMC_MDIV_3 \
++					| AT91C_PMC_CSS_PLLA_CLK)
++
++#define PLLA_SETTINGS	(BOARD_CKGR_PLLA \
++			| BOARD_PLLACOUNT \
++			| BOARD_MULA \
++			| BOARD_DIVA)
++
++/*
++ * DataFlash Settings
++ */
++#define CONFIG_SYS_SPI_CLOCK    AT91C_SPI_CLK
++#define CONFIG_SYS_SPI_MODE     SPI_MODE3
++
++#if defined(CONFIG_SPI_BUS0)
++#define CONFIG_SYS_BASE_SPI     AT91C_BASE_SPI0
++#elif defined(CONFIG_SPI_BUS1)
++#define CONFIG_SYS_BASE_SPI     AT91C_BASE_SPI1
++#endif
++
++#if (AT91C_SPI_PCS_DATAFLASH == AT91C_SPI_PCS0_DATAFLASH)
++#define CONFIG_SYS_SPI_PCS	AT91C_PIN_PA(14)
++#elif (AT91C_SPI_PCS_DATAFLASH == AT91C_SPI_PCS1_DATAFLASH)
++#define CONFIG_SYS_SPI_PCS	AT91C_PIN_PA(7)
++#endif
++
++
++#endif /*#ifndef __RTH9580WF01_H__ */
+diff --git a/contrib/board/resideo/rth9580wf01/rth9580wf01_uboot_defconfig b/contrib/board/resideo/rth9580wf01/rth9580wf01_uboot_defconfig
+new file mode 100644
+index 0000000..3afe90f
+--- /dev/null
++++ b/contrib/board/resideo/rth9580wf01/rth9580wf01_uboot_defconfig
+@@ -0,0 +1,6 @@
++CONFIG_RTH9580WF01=y
++CONFIG_SPI_CLK=50000000
++CONFIG_IMG_ADDRESS="0x00010000"
++CONFIG_JUMP_ADDR="0x20f50000"
++CONFIG_IMG_SIZE="0x000b0000"
++CONFIG_DEBUG=y
+diff --git a/contrib/driver/Config.in.driver b/contrib/driver/Config.in.driver
+index 5cfd165..1b5f5ad 100644
+--- a/contrib/driver/Config.in.driver
++++ b/contrib/driver/Config.in.driver
+@@ -1,3 +1,8 @@
+ #
+ # Config.in for the contributed drivers
+ #
++config SDRSDRAM
++        bool
++        default n
++        help
++          Initialize SDR SDRAM controller
+diff --git a/contrib/driver/driver.mk b/contrib/driver/driver.mk
+index 2e4f646..1633ac9 100644
+--- a/contrib/driver/driver.mk
++++ b/contrib/driver/driver.mk
+@@ -3,4 +3,5 @@
+ #
+ CONTRIB_DRIVERS_SRC:=contrib/driver
+ 
+-#COBJS-$(CONFIG_ABC)	+= $(CONTRIB_DRIVERS_SRC)/adc.o
++#COBJS-$(CONFIG_ABC)		+= $(CONTRIB_DRIVERS_SRC)/adc.o
++COBJS-$(CONFIG_SDRSDRAM)	+= $(CONTRIB_DRIVERS_SRC)/sdrsdramc.o
+diff --git a/contrib/driver/sdrsdramc.c b/contrib/driver/sdrsdramc.c
+new file mode 100644
+index 0000000..db6809c
+--- /dev/null
++++ b/contrib/driver/sdrsdramc.c
+@@ -0,0 +1,94 @@
++#include "hardware.h"
++#include "arch/at91_ddrsdrc.h"
++#include "debug.h"
++#include "sdrsdramc.h"
++#include "timer.h"
++
++
++#define write_sdrsdramc(reg, value) \
++	(*(volatile unsigned int *)((reg) + AT91C_BASE_DDRSDRC)) = (value)
++
++/* see 29.4.1 SDR-SDRAM Initialization, SAM9G35 datasheet */
++void sdrsdramc_initialize(unsigned int ram_address, struct sdrsdramc_register *sdrsdramc_cfg)
++{
++	unsigned int i;
++
++	/*
++	 * step 1: program the memory device type in the DDRSDRC Memory Device Register
++	 */
++	write_sdrsdramc(HDDRSDRC2_MDR, sdrsdramc_cfg->mdr);
++
++	/*
++	 * step 2: program features of the SDR-SDRAM device in the DDRSDRC Configuration
++	 *         Register and in the DDRSDRC Timing Parameter Registers
++	 */
++	write_sdrsdramc(HDDRSDRC2_CR, sdrsdramc_cfg->cr);
++	write_sdrsdramc(HDDRSDRC2_T0PR, sdrsdramc_cfg->t0pr);
++	write_sdrsdramc(HDDRSDRC2_T1PR, sdrsdramc_cfg->t1pr);
++
++	/* step 3: a minimum pause of 200 μs is provided to precede any signal toggle */
++	udelay(200);
++
++	/*
++	 * step 4: issue a NOP command to the SDR-SDRAM and perform a write
++	 *         access to any SDR-SDRAM address to acknowledge this command
++	 */
++	write_sdrsdramc(HDDRSDRC2_MR, AT91C_DDRC2_MODE_NOP_CMD);
++	writel(0x00000000, ram_address);
++
++	/* the clock which drives SDR-SDRAM device is now enabled */
++
++	/*
++	 * step 5: issue an All Banks Precharge command to the SDR-SDRAM and perform
++	 *         a write access to any SDR-SDRAM address to acknowledge this command
++	 */
++	write_sdrsdramc(HDDRSDRC2_MR, AT91C_DDRC2_MODE_PRCGALL_CMD);
++	writel(0x00000000, ram_address);
++
++	/*
++	 * step 6: issue eight CAS before RAS (CBR) auto-refresh cycles to program CBR,
++	 *         configure the MODE field value to 4 in the DDRSDRC Mode Register and
++	 *         perform a write access to any SDR-SDRAM location eight times to
++	 *         acknowledge these commands
++	 */
++	for(i = 0; i < 8; i++) {
++		write_sdrsdramc(HDDRSDRC2_MR, AT91C_DDRC2_MODE_RFSH_CMD);
++		writel(0x00000000, ram_address);
++	}
++
++	/*
++	 * step 7: a Mode Register set (MRS) cycle is issued to program the parameters
++	 *         of the SDR-SDRAM devices (in particular CAS latency and burst length)
++	 *         to program MRS, configure the MODE field value to 3 in the DDRSDRC
++	 *         Mode Register and perform a write access such that BA[1:0] are set to 0
++	 */
++	write_sdrsdramc(HDDRSDRC2_MR, AT91C_DDRC2_MODE_LMR_CMD);
++	writel(0x00000000, ram_address);
++
++	/*
++	 * step 8: go into Normal mode by configuring the MODE field value to 0 in the
++	 *         DDRSDRC Mode Register and performing a write access to any SDR-SDRAM
++	 *         address to acknowledge this command
++	 */
++	write_sdrsdramc(HDDRSDRC2_MR, AT91C_DDRC2_MODE_NORMAL_CMD);
++	writel(0x00000000, ram_address);
++
++	/*
++	 * step 9: write the refresh rate into the COUNT field of the
++	 *         DDRSDRC Refresh Timer Register
++	 */
++	write_sdrsdramc(HDDRSDRC2_RTR, sdrsdramc_cfg->rtr);
++
++	/* the SDR-SDRAM device is now fully functional */
++}
++
++void ddramc_dump_regs(unsigned int base_address)
++{
++#if (BOOTSTRAP_DEBUG_LEVEL >= DEBUG_LOUD)
++        unsigned int size = 0x160;
++
++        dbg_info("\nDump DDRAMC Registers:\n");
++        dbg_hexdump((unsigned char *)base_address, size, DUMP_WIDTH_BIT_32);
++#endif
++}
++
+diff --git a/contrib/include/contrib_board.h b/contrib/include/contrib_board.h
+index 6579b72..8993b64 100644
+--- a/contrib/include/contrib_board.h
++++ b/contrib/include/contrib_board.h
+@@ -65,4 +65,8 @@
+ #include "sama5d3_linea.h"
+ #endif
+ 
++#ifdef CONFIG_RTH9580WF01
++#include "rth9580wf01.h"
++#endif
++
+ #endif
+diff --git a/contrib/include/sdrsdramc.h b/contrib/include/sdrsdramc.h
+new file mode 100644
+index 0000000..445218e
+--- /dev/null
++++ b/contrib/include/sdrsdramc.h
+@@ -0,0 +1,15 @@
++#ifndef __SDRSDRAMC_H__
++#define __SDRSDRAMC_H__
++
++struct sdrsdramc_register {
++	unsigned int mdr;
++	unsigned int cr;
++	unsigned int rtr;
++	unsigned int t0pr;
++	unsigned int t1pr;
++};
++
++extern void sdrsdramc_initialize(unsigned int ram_address,
++				struct sdrsdramc_register *sdrsdramc_cfg);
++
++#endif /* #ifndef __SDRSDRAMC_H__ */
+-- 
+2.20.1
+

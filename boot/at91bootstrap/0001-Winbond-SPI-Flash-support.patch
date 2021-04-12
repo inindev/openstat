@@ -1,0 +1,35 @@
+From 9d783ee595ac627ec5e339b27c660d0af996e94d Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Wed, 10 Mar 2021 05:11:15 -0500
+Subject: [PATCH 1/4] Winbond SPI Flash support
+
+---
+ driver/spi_flash.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/driver/spi_flash.c b/driver/spi_flash.c
+index c252335..2b5ac9b 100644
+--- a/driver/spi_flash.c
++++ b/driver/spi_flash.c
+@@ -582,7 +582,8 @@ static int df_desc_init(struct dataflash_descriptor *df_desc, unsigned char vend
+ 	df_desc->family = family;
+ 
+ 	switch ( vendor ) {
+-		case MANUFACTURER_ID_ATMEL: {
++		case MANUFACTURER_ID_ATMEL:
++		case MANUFACTURER_ID_WINBOND: {
+ 
+ 			if ((df_desc->family == DF_FAMILY_AT26F)
+ 				|| (df_desc->family == DF_FAMILY_AT26DF)) {
+@@ -600,7 +601,7 @@ static int df_desc_init(struct dataflash_descriptor *df_desc, unsigned char vend
+ 		}
+ 		break;
+ 
+-		case MANUFACTURER_ID_MICRON:{
++		case MANUFACTURER_ID_MICRON: {
+ 
+ 			if (df_desc->family == DF_FAMILY_M25P) {
+ 				ret = df_n25q_desc_init(df_desc);
+-- 
+2.20.1
+

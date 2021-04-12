@@ -1,0 +1,60 @@
+From 03da7ab65f8e9bbe0f353f1ee73f3906ff523367 Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Wed, 10 Mar 2021 06:01:14 -0500
+Subject: [PATCH 3/4] 16MB RAM Option
+
+---
+ driver/Config.in.memory | 4 ++++
+ driver/driver_cpp.mk    | 4 ++++
+ toplevel_cpp.mk         | 5 +++++
+ 3 files changed, 13 insertions(+)
+
+diff --git a/driver/Config.in.memory b/driver/Config.in.memory
+index 745092d..38ca75e 100644
+--- a/driver/Config.in.memory
++++ b/driver/Config.in.memory
+@@ -65,6 +65,10 @@ config	RAM_8MB
+ 	depends on !SAMA7G5
+ 	bool "8 MB"
+ 
++config	RAM_16MB
++	depends on !SAMA7G5
++	bool "16 MB"
++
+ config	RAM_32MB
+ 	depends on !SAMA7G5
+ 	bool "32 MB"
+diff --git a/driver/driver_cpp.mk b/driver/driver_cpp.mk
+index 6b93d51..d15a1fc 100644
+--- a/driver/driver_cpp.mk
++++ b/driver/driver_cpp.mk
+@@ -88,6 +88,10 @@ ifeq ($(CONFIG_RAM_8MB),y)
+ CPPFLAGS += -DCONFIG_RAM_8MB
+ endif
+ 
++ifeq ($(CONFIG_RAM_16MB),y)
++CPPFLAGS += -DCONFIG_RAM_16MB
++endif
++
+ ifeq ($(CONFIG_RAM_32MB),y)
+ CPPFLAGS += -DCONFIG_RAM_32MB
+ endif
+diff --git a/toplevel_cpp.mk b/toplevel_cpp.mk
+index 8f85870..189a383 100644
+--- a/toplevel_cpp.mk
++++ b/toplevel_cpp.mk
+@@ -42,6 +42,11 @@ CPPFLAGS += \
+ 	-DMEM_SIZE=0x2000000
+ endif
+ 
++ifeq ($(CONFIG_RAM_16MB), y)
++CPPFLAGS += \
++	-DMEM_SIZE=0x1000000
++endif
++
+ ifeq ($(CONFIG_RAM_8MB), y)
+ CPPFLAGS += \
+ 	-DMEM_SIZE=0x800000
+-- 
+2.20.1
+
