@@ -18,9 +18,6 @@ git checkout v2021.04 -b v2021.04
 git am ../openstat/boot/u-boot/0001-board-files-for-resideo-rth9580wf01-thermostat.patch
   Applying: board files for resideo rth9580wf01 thermostat
 
-git am ../openstat/boot/u-boot/0002-device-tree-for-resideo-rth9580wf01-thermostat.patch
-  Applying: device tree for resideo rth9580wf01 thermostat
-
 make rth9580wf01_spiflash_defconfig
 make
 ```
