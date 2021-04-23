@@ -20,7 +20,10 @@ make distclean
 ./scripts/feeds install -a
 
 git am ../openstat/linux/openwrt/0001-support-for-resideo-rth9580wf01-board.patch
-cp ../openstat/linux/openwrt/diffconfig .config
+git am ../openstat/linux/openwrt/0002-at91bootstrap-target-for-resideo-rth9580wf01-board.patch
+git am ../openstat/linux/openwrt/0003-u-boot-target-for-resideo-rth9580wf01-board.patch
+
+cp ../openstat/linux/openwrt/defconfig .config
 
 make defconfig
 make
