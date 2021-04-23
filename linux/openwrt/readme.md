@@ -13,6 +13,8 @@ git clone https://github.com/openwrt/openwrt.git
 cd openwrt
 
 git fetch --tags
+git tag
+
 git checkout openwrt-19.07
 make distclean
 
@@ -24,7 +26,8 @@ git am ../openstat/linux/openwrt/0002-at91bootstrap-target-for-resideo-rth9580wf
 git am ../openstat/linux/openwrt/0003-u-boot-target-for-resideo-rth9580wf01-board.patch
 
 cp ../openstat/linux/openwrt/defconfig .config
-
 make defconfig
-make
+
+make download
+make -j$(($(nproc)+1))
 ```
