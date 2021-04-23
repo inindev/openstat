@@ -1,4 +1,4 @@
-From f128898dc8ec11c0afcb42931528b5535be6faa5 Mon Sep 17 00:00:00 2001
+From bd8c0f83701eac89f90bbb0424c5e298b78990f6 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Tue, 23 Mar 2021 18:49:42 -0400
 Subject: [PATCH] board files for resideo rth9580wf01 thermostat
@@ -6,7 +6,7 @@ Subject: [PATCH] board files for resideo rth9580wf01 thermostat
 ---
  arch/arm/dts/Makefile                   |   2 +
  arch/arm/dts/rth9580wf01.dts            | 129 ++++++++++++++++++++++++
- arch/arm/dts/rth9580wf01.dtsi           |  79 +++++++++++++++
+ arch/arm/dts/rth9580wf01.dtsi           |  77 ++++++++++++++
  arch/arm/mach-at91/Kconfig              |  12 +++
  board/resideo/common                    |   1 +
  board/resideo/rth9580wf01/Kconfig       |  12 +++
@@ -15,7 +15,7 @@ Subject: [PATCH] board files for resideo rth9580wf01 thermostat
  board/resideo/rth9580wf01/rth9580wf01.c |  74 ++++++++++++++
  configs/rth9580wf01_spiflash_defconfig  |  81 +++++++++++++++
  include/configs/rth9580wf01.h           |  64 ++++++++++++
- 11 files changed, 474 insertions(+)
+ 11 files changed, 472 insertions(+)
  create mode 100644 arch/arm/dts/rth9580wf01.dts
  create mode 100644 arch/arm/dts/rth9580wf01.dtsi
  create mode 120000 board/resideo/common
@@ -41,7 +41,7 @@ index c6710826a0..92df9b3c83 100644
  dtb-$(CONFIG_TARGET_AT91SAM9N12EK) += at91sam9n12ek.dtb
 diff --git a/arch/arm/dts/rth9580wf01.dts b/arch/arm/dts/rth9580wf01.dts
 new file mode 100644
-index 0000000000..6a7244687b
+index 0000000000..df726a05db
 --- /dev/null
 +++ b/arch/arm/dts/rth9580wf01.dts
 @@ -0,0 +1,129 @@
@@ -75,8 +75,8 @@ index 0000000000..6a7244687b
 +			};
 +
 +			hlcdc: hlcdc@f8038000 {
-+				u-boot,dm-pre-reloc;
 +				status = "okay";
++				u-boot,dm-pre-reloc;
 +			};
 +
 +			spi0: spi@f0000000 {
@@ -176,10 +176,10 @@ index 0000000000..6a7244687b
 +
 diff --git a/arch/arm/dts/rth9580wf01.dtsi b/arch/arm/dts/rth9580wf01.dtsi
 new file mode 100644
-index 0000000000..cf49832b50
+index 0000000000..1d82770a0a
 --- /dev/null
 +++ b/arch/arm/dts/rth9580wf01.dtsi
-@@ -0,0 +1,79 @@
+@@ -0,0 +1,77 @@
 +/*
 + * rth9580wf01.dtsi - Device Tree Include file for RTH9580WF01 Thermostat Board
 + *
@@ -216,18 +216,16 @@ index 0000000000..cf49832b50
 +				pinctrl-0 = <&pinctrl_lcd_base &pinctrl_lcd_pwm &pinctrl_lcd_rgb888>;
 +
 +				display-timings {
-+					u-boot,dm-pre-reloc;
 +					480x272 {
-+						clock-frequency = <24000000>;
++						clock-frequency = <9000000>;
 +						hactive = <480>;
 +						vactive = <272>;
-+						hsync-len = <128>;
-+						hfront-porch = <64>;
-+						hback-porch = <64>;
-+						vfront-porch = <22>;
-+						vback-porch = <21>;
-+						vsync-len = <2>;
-+						u-boot,dm-pre-reloc;
++						hsync-len = <41>;
++						hfront-porch = <2>;
++						hback-porch = <2>;
++						vfront-porch = <2>;
++						vback-porch = <2>;
++						vsync-len = <11>;
 +					};
 +				};
 +			};
@@ -523,7 +521,7 @@ index 0000000000..b092b51187
 +CONFIG_LZMA=y
 diff --git a/include/configs/rth9580wf01.h b/include/configs/rth9580wf01.h
 new file mode 100644
-index 0000000000..d0e5155e8e
+index 0000000000..bb1117569e
 --- /dev/null
 +++ b/include/configs/rth9580wf01.h
 @@ -0,0 +1,64 @@
@@ -583,7 +581,7 @@ index 0000000000..d0e5155e8e
 +/*
 + * Size of malloc() pool
 + */
-+#define CONFIG_SYS_MALLOC_LEN		(384 << 10)	/* reserve 384k for malloc() */
++#define CONFIG_SYS_MALLOC_LEN		(256 << 10)	/* reserve 256k for malloc() */
 +
 +#define CONFIG_SYS_MASTER_CLOCK		132096000
 +#define CONFIG_SYS_AT91_PLLA		0x20c73f03
