@@ -13,7 +13,7 @@ git clone https://github.com/openwrt/openwrt.git
 cd openwrt
 
 git fetch --tags
-git checkout v19.07.7 -b v19.07.7
+git checkout openwrt-19.07
 make distclean
 
 ./scripts/feeds update -a
