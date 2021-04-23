@@ -1,4 +1,4 @@
-From 069b46c41ca6e634844e24d1a611b6506519f5a7 Mon Sep 17 00:00:00 2001
+From dbf42f31585ebcd9dc408292da45823981151df8 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Sun, 11 Apr 2021 18:17:30 -0400
 Subject: [PATCH 4/4] board files for resideo rth9580wf01 thermostat

@@ -1,4 +1,4 @@
-From 9d783ee595ac627ec5e339b27c660d0af996e94d Mon Sep 17 00:00:00 2001
+From 607abf700da77ee21df8c2524d6806b80bd1f081 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Wed, 10 Mar 2021 05:11:15 -0500
 Subject: [PATCH 1/4] Winbond SPI Flash support

@@ -11,6 +11,7 @@ git clone https://github.com/inindev/openstat.git
 ```
 git clone https://github.com/linux4sam/at91bootstrap.git
 cd at91bootstrap
+git checkout at91bootstrap-3.x
 
 git am ../openstat/boot/at91bootstrap/0001-Winbond-SPI-Flash-support.patch
   Applying: Winbond SPI Flash support

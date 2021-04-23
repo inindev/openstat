@@ -1,4 +1,4 @@
-From db0658afb1bda1ea23d89e60bfea65be9cc8c405 Mon Sep 17 00:00:00 2001
+From aea4e3cc69ab6ddecc3acf0a49399cb395888c3d Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Fri, 19 Mar 2021 11:37:07 -0400
 Subject: [PATCH 2/4] ISSI SPI Flash support
