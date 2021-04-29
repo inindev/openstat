@@ -15,8 +15,7 @@ cd u-boot
 git fetch --tags
 git checkout -b uboot-2021.04 v2021.04
 
-git am ../openstat/boot/u-boot/0001-board-files-for-resideo-rth9580wf01-thermostat.patch
-  Applying: board files for resideo rth9580wf01 thermostat
+git am ../openstat/boot/u-boot/combined-resideo-rth9580wf01-thermostat.patch
 
 make rth9580wf01_spiflash_defconfig
 make
