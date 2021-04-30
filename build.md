@@ -6,14 +6,14 @@ The current firmware consists of three components: spl, u-boot, and linux (openw
 
 ### spl
 The Secondary Program Loader (spl) gets executed by the ROM of the microcontroller and is responsible for low-level setup of the hardware on the board, such as timing of the SDR SDRAM. The spl used in this implementation is [at91bootstrap](https://www.linux4sam.org/bin/view/Linux4SAM/AT91Bootstrap).
-<br/>[building spl](boot/at91bootstrap/readme.md)
+<br/>_--> Note that this step is no longer necessary as the spl build has been integrated into the openwrt build below._
+<br/><s>[building spl](boot/at91bootstrap/readme.md)</s>
 
 ### u-boot
 The final stage of bootstrapping is accomplished using [u-boot](https://www.denx.de/wiki/U-Boot).
-<br/>[building u-boot](boot/u-boot/readme.md)
+<br/>_--> Note that this step is no longer necessary as u-boot has been integrated into the openwrt build below._
+<br/><s>[building u-boot](boot/u-boot/readme.md)</s>
 
 ### linux
-The linux distribution currently being used for this project is [openwrt](https://openwrt.org).
+The linux distribution currently being used for this project is [openwrt](https://openwrt.org). Note that this step now builds the spl, u-boot, and openwrt.
 <br/>[building openwrt linux](linux/openwrt/readme.md)
-
-_Note that while openwrt has outstanding support for cross-compiling, both at91bootstrap and u-boot require a cross compiler if not built on a 32 bit ARM device (such as a raspberry pi). These instructions currently assume a 32 bit ARM build using a debian based linux._
