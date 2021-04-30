@@ -1,0 +1,221 @@
+From 50d2be1e7d2d8a851fee9b40986fee499b56eda5 Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Sat, 10 Apr 2021 07:57:20 -0400
+Subject: [PATCH 3/4] support for resideo rth9580wf01 board
+
+---
+ ...s-for-resideo-rth9580wf01-thermostat.patch | 18 ++++-----
+ target/linux/at91/image/sam9x.mk              | 23 +++++++++++
+ ...6-ARM-at91-build-dtb-for-rth9580wf01.patch | 10 +++++
+ ...-ARM-at91-spi-nor-add-issi-is25lp128.patch | 10 +++++
+ target/linux/at91/sam9x/config-default        | 38 +++++++++++++++----
+ 5 files changed, 81 insertions(+), 18 deletions(-)
+ create mode 100644 target/linux/at91/patches-4.14/106-ARM-at91-build-dtb-for-rth9580wf01.patch
+ create mode 100644 target/linux/at91/patches-4.14/107-ARM-at91-spi-nor-add-issi-is25lp128.patch
+
+diff --git a/package/boot/uboot-at91/patches/0004-board-files-for-resideo-rth9580wf01-thermostat.patch b/package/boot/uboot-at91/patches/0004-board-files-for-resideo-rth9580wf01-thermostat.patch
+index 057125b06f..238004ae73 100644
+--- a/package/boot/uboot-at91/patches/0004-board-files-for-resideo-rth9580wf01-thermostat.patch
++++ b/package/boot/uboot-at91/patches/0004-board-files-for-resideo-rth9580wf01-thermostat.patch
+@@ -80,10 +80,10 @@ index 0000000000..ceb848b36f
+ +obj-y += rth9580wf01.o
+ diff --git a/board/resideo/rth9580wf01/rth9580wf01.c b/board/resideo/rth9580wf01/rth9580wf01.c
+ new file mode 100644
+-index 0000000000..d858d85168
++index 0000000000..d2048e66b7
+ --- /dev/null
+ +++ b/board/resideo/rth9580wf01/rth9580wf01.c
+-@@ -0,0 +1,136 @@
++@@ -0,0 +1,132 @@
+ +/*
+ + * Copyright (C) 2012 Atmel Corporation
+ + *
+@@ -92,13 +92,8 @@ index 0000000000..d858d85168
+ +
+ +#include <common.h>
+ +#include <dm.h>
+-+#include <asm/io.h>
+-+#include <asm/arch/at91sam9x5_matrix.h>
+-+#include <asm/arch/at91sam9_smc.h>
+ +#include <asm/arch/at91_common.h>
+-+#include <asm/arch/at91_rstc.h>
+ +#include <asm/arch/clk.h>
+-+#include <asm/arch/gpio.h>
+ +#include <debug_uart.h>
+ +#include <atmel_lcd.h>
+ +#include <version.h>
+@@ -137,12 +132,13 @@ index 0000000000..d858d85168
+ +			strmhz(temp, get_cpu_clk_rate()));
+ +
+ +	len += sprintf(&buf[len], "%d MB SDRAM, 16 MB Flash\n",
+-+		       CONFIG_SYS_SDRAM_SIZE >> 20);
+++			CONFIG_SYS_SDRAM_SIZE >> 20);
+ +
+ +	ret = uclass_get_device(UCLASS_VIDEO, 0, &dev);
+ +	if (ret)
+ +		return ret;
+ +
+++	 /* rotate the logo 180 degrees, then move to lower-right */
+ +	get_microchip_logo_info(&logo_info);
+ +	p = (char*)logo_info.logo_addr;
+ +	i = *(int*)(logo_info.logo_addr + 10);
+@@ -155,8 +151,8 @@ index 0000000000..d858d85168
+ +
+ +	vid = dev_get_uclass_priv(dev);
+ +	ret = video_bmp_display(dev, logo_info.logo_addr,
+-+				vid->xsize - logo_info.logo_width,
+-+				vid->ysize - logo_info.logo_height,
+++				vid->xsize - logo_info.logo_width - 4,
+++				vid->ysize - logo_info.logo_height - 2,
+ +				false);
+ +	if (ret)
+ +		return ret;
+@@ -165,7 +161,7 @@ index 0000000000..d858d85168
+ +	if (ret)
+ +		return ret;
+ +
+-+	vidconsole_position_cursor(con, 0, (logo_info.logo_height + 8));
+++	vidconsole_position_cursor(con, 0, (logo_info.logo_height + 10));
+ +	for (s = buf, i = 0; i < len; s++, i++)
+ +		vidconsole_put_char(con, *s);
+ +
+diff --git a/target/linux/at91/image/sam9x.mk b/target/linux/at91/image/sam9x.mk
+index 3aada4c72b..75965517b4 100644
+--- a/target/linux/at91/image/sam9x.mk
++++ b/target/linux/at91/image/sam9x.mk
+@@ -130,3 +130,26 @@ define Device/wb45n
+   MKUBIFS_OPTS := -m $$(PAGESIZE) -e 124KiB -c 955
+ endef
+ TARGET_DEVICES += wb45n
++
++define Build/rth9580wf01-firmware
++  dd bs=64K count=256 if=/dev/zero | tr '\000' '\377' > $(1).new
++  dd bs=64K seek=0  conv=notrunc of=$(1).new if=$(BIN_DIR)/at91bootstrap-$(DEVICE_NAME)_uboot/at91bootstrap.bin
++  dd bs=64K seek=1  conv=notrunc of=$(1).new if=$(BIN_DIR)/u-boot-$(DEVICE_NAME)_spiflash/u-boot.bin
++  dd bs=64K seek=12 conv=notrunc of=$(1).new if=$(BIN_DIR)/$(KERNEL_IMAGE)
++  dd bs=64K seek=76 conv=notrunc of=$(1).new if=$(BIN_DIR)/$(IMAGE_PREFIX)-squashfs-rootfs.bin
++  mv $(1).new $(1)
++endef
++
++define Device/rth9580wf01
++  DEVICE_TITLE := Resideo RTH9580WF01
++  BLOCKSIZE := 64k
++
++  KERNEL := kernel-bin | lzma | uImage lzma
++  KERNEL_INSTALL := 1
++  KERNEL_SUFFIX := -uImage
++
++  IMAGES := rootfs.bin firmware.bin
++  IMAGE/rootfs.bin := append-rootfs
++  IMAGE/firmware.bin := rth9580wf01-firmware $$(BIN_DIR)/$$(IMAGE_PREFIX)-firmware.bin
++endef
++TARGET_DEVICES += rth9580wf01
+diff --git a/target/linux/at91/patches-4.14/106-ARM-at91-build-dtb-for-rth9580wf01.patch b/target/linux/at91/patches-4.14/106-ARM-at91-build-dtb-for-rth9580wf01.patch
+new file mode 100644
+index 0000000000..f882df02bc
+--- /dev/null
++++ b/target/linux/at91/patches-4.14/106-ARM-at91-build-dtb-for-rth9580wf01.patch
+@@ -0,0 +1,10 @@
++--- a/arch/arm/boot/dts/Makefile
+++++ b/arch/arm/boot/dts/Makefile
++@@ -47,6 +47,7 @@ dtb-$(CONFIG_SOC_AT91SAM9) += \
++ 	at91sam9g35ek.dtb \
++ 	at91sam9x25ek.dtb \
++ 	at91sam9x35ek.dtb \
+++	rth9580wf01.dtb \
++ 	wb45n.dtb
++ dtb-$(CONFIG_SOC_SAM_V7) += \
++ 	at91-kizbox2.dtb \
+diff --git a/target/linux/at91/patches-4.14/107-ARM-at91-spi-nor-add-issi-is25lp128.patch b/target/linux/at91/patches-4.14/107-ARM-at91-spi-nor-add-issi-is25lp128.patch
+new file mode 100644
+index 0000000000..343b61f44b
+--- /dev/null
++++ b/target/linux/at91/patches-4.14/107-ARM-at91-spi-nor-add-issi-is25lp128.patch
+@@ -0,0 +1,10 @@
++--- a/drivers/mtd/spi-nor/spi-nor.c
+++++ b/drivers/mtd/spi-nor/spi-nor.c
++@@ -1027,6 +1027,8 @@ static const struct flash_info spi_nor_ids[] = {
++ 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++ 	{ "is25wp064", INFO(0x9d7017, 0, 64 * 1024, 128,
++ 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+++	{ "is25lp128", INFO(0x9d6018, 0, 64 * 1024, 256,
+++			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
++ 	{ "is25wp128", INFO(0x9d7018, 0, 64 * 1024, 256,
++ 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+diff --git a/target/linux/at91/sam9x/config-default b/target/linux/at91/sam9x/config-default
+index a8923a6efe..5d82becf00 100644
+--- a/target/linux/at91/sam9x/config-default
++++ b/target/linux/at91/sam9x/config-default
+@@ -13,6 +13,7 @@ CONFIG_ATMEL_ST=y
+ CONFIG_BACKLIGHT_ATMEL_LCDC=y
+ # CONFIG_CACHE_L2X0 is not set
+ CONFIG_CMA_DEBUGFS=y
++CONFIG_CMA_SIZE_MBYTES=1
+ CONFIG_CPU_32v4T=y
+ CONFIG_CPU_32v5=y
+ CONFIG_CPU_ABRT_EV4T=y
+@@ -33,6 +34,8 @@ CONFIG_CRC7=y
+ CONFIG_CRC_CCITT=y
+ CONFIG_CRC_ITU_T=y
+ CONFIG_DEBUG_INFO=y
++# CONFIG_ETHERNET is not set
++# CONFIG_EXT4_FS is not set
+ CONFIG_FB_ATMEL=y
+ CONFIG_FB_BACKLIGHT=y
+ CONFIG_FB_MODE_HELPERS=y
+@@ -41,24 +44,45 @@ CONFIG_GENERIC_ATOMIC64=y
+ CONFIG_HZ=128
+ CONFIG_HZ_FIXED=128
+ CONFIG_HZ_PERIODIC=y
++# CONFIG_ISDN is not set
++CONFIG_JFFS2_FS=y
++# CONFIG_JFFS2_FS_XATTR is not set
++# CONFIG_JFFS2_LZMA is not set
++# CONFIG_JFFS2_RTIME is not set
++CONFIG_JFFS2_ZLIB=y
++# CONFIG_LBDAF is not set
++# CONFIG_MEDIA_SUPPORT is not set
+ # CONFIG_MFD_ACT8945A is not set
+ # CONFIG_MFD_ATMEL_FLEXCOM is not set
+-# CONFIG_MMC_SDHCI is not set
+-CONFIG_MMC_SPI=y
+-# CONFIG_MTD_SPI_NOR is not set
++# CONFIG_MMC is not set
++# CONFIG_MTD_NAND is not set
++CONFIG_MTD_SPI_NOR_USE_4K_SECTORS=y
++CONFIG_MTD_SPI_NOR_USE_4K_SECTORS_LIMIT=16384
++# CONFIG_MTD_UBI is not set
+ CONFIG_NEED_KUSER_HELPERS=y
++# CONFIG_NETWORK_FILESYSTEMS is not set
++# CONFIG_NEW_LEDS is not set
+ # CONFIG_NO_HZ_IDLE is not set
+ # CONFIG_POWER_RESET_AT91_SAMA5D2_SHDWC is not set
+ # CONFIG_REGULATOR_ACT8865 is not set
+ CONFIG_RTC_DRV_AT91SAM9=y
+ # CONFIG_SAMA5D4_WATCHDOG is not set
+-# CONFIG_SND_ARM is not set
+-# CONFIG_SND_ATMEL_SOC_CLASSD is not set
+-# CONFIG_SND_DRIVERS is not set
+-# CONFIG_SND_SPI is not set
++# CONFIG_SCSI is not set
++# CONFIG_SCSI_DMA is not set
++# CONFIG_SG_POOL is not set
+ CONFIG_SOC_AT91RM9200=y
+ CONFIG_SOC_AT91SAM9=y
+ CONFIG_SOC_SAM_V4_V5=y
++# CONFIG_SOUND is not set
++# CONFIG_SPI_BITBANG is not set
++# CONFIG_SPI_DYNAMIC is not set
++# CONFIG_SPI_GPIO is not set
+ CONFIG_SPLIT_PTLOCK_CPUS=999999
++CONFIG_SQUASHFS=y
++# CONFIG_SQUASHFS_XZ is not set
++CONFIG_SQUASHFS_ZLIB=y
++# CONFIG_STAGING is not set
+ CONFIG_TOUCHSCREEN_ADS7846=y
+ # CONFIG_TOUCHSCREEN_ATMEL_MXT is not set
++# CONFIG_USB_SUPPORT is not set
++# CONFIG_VFAT_FS is not set
+-- 
+2.20.1
+
