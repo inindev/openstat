@@ -1,24 +1,53 @@
-From bd8c0f83701eac89f90bbb0424c5e298b78990f6 Mon Sep 17 00:00:00 2001
+From 97490e4ced3aa0e5bc580df46fdff0ff62ff2068 Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Thu, 29 Apr 2021 14:10:29 -0400
+Subject: [PATCH 1/3] fix y_offset bug
+
+---
+ lib/at91/at91.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/at91/at91.c b/lib/at91/at91.c
+index 048597690b..f594864808 100644
+--- a/lib/at91/at91.c
++++ b/lib/at91/at91.c
+@@ -15,7 +15,7 @@ void atmel_logo_info(vidinfo_t *info)
+ 	info->logo_width = ATMEL_LOGO_8BPP_WIDTH;
+ 	info->logo_height = ATMEL_LOGO_8BPP_HEIGHT;
+ 	info->logo_x_offset = ATMEL_LOGO_8BPP_X_OFFSET;
+-	info->logo_y_offset = ATMEL_LOGO_8BPP_X_OFFSET;
++	info->logo_y_offset = ATMEL_LOGO_8BPP_Y_OFFSET;
+ 	info->logo_addr = (u_long)atmel_logo_8bpp;
+ }
+ 
+@@ -24,6 +24,6 @@ void microchip_logo_info(vidinfo_t *info)
+ 	info->logo_width = MICROCHIP_LOGO_8BPP_WIDTH;
+ 	info->logo_height = MICROCHIP_LOGO_8BPP_HEIGHT;
+ 	info->logo_x_offset = MICROCHIP_LOGO_8BPP_X_OFFSET;
+-	info->logo_y_offset = MICROCHIP_LOGO_8BPP_X_OFFSET;
++	info->logo_y_offset = MCIROCHIP_LOGO_8BPP_Y_OFFSET;
+ 	info->logo_addr = (u_long)microchip_logo_8bpp;
+ }
+-- 
+2.20.1
+
+
+From 1bf6a06329006845caacd53a472363a38f45a8bd Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Tue, 23 Mar 2021 18:49:42 -0400
-Subject: [PATCH 1/5] board files for resideo rth9580wf01 thermostat
+Subject: [PATCH 2/3] board files for resideo rth9580wf01 thermostat
 
 ---
  arch/arm/dts/Makefile                   |   2 +
- arch/arm/dts/rth9580wf01.dts            | 129 ++++++++++++++++++++++++
- arch/arm/dts/rth9580wf01.dtsi           |  77 ++++++++++++++
- arch/arm/mach-at91/Kconfig              |  12 +++
- board/resideo/common                    |   1 +
- board/resideo/rth9580wf01/Kconfig       |  12 +++
- board/resideo/rth9580wf01/MAINTAINERS   |   6 ++
+ arch/arm/mach-at91/Kconfig              |  12 ++
+ board/resideo/rth9580wf01/Kconfig       |  12 ++
+ board/resideo/rth9580wf01/MAINTAINERS   |   6 +
  board/resideo/rth9580wf01/Makefile      |  14 +++
- board/resideo/rth9580wf01/rth9580wf01.c |  74 ++++++++++++++
- configs/rth9580wf01_spiflash_defconfig  |  81 +++++++++++++++
- include/configs/rth9580wf01.h           |  64 ++++++++++++
- 11 files changed, 472 insertions(+)
- create mode 100644 arch/arm/dts/rth9580wf01.dts
- create mode 100644 arch/arm/dts/rth9580wf01.dtsi
- create mode 120000 board/resideo/common
+ board/resideo/rth9580wf01/rth9580wf01.c | 139 ++++++++++++++++++++++++
+ configs/rth9580wf01_spiflash_defconfig  |  82 ++++++++++++++
+ drivers/video/atmel_hlcdfb.c            |   1 +
+ include/configs/rth9580wf01.h           |  64 +++++++++++
+ 9 files changed, 332 insertions(+)
  create mode 100644 board/resideo/rth9580wf01/Kconfig
  create mode 100644 board/resideo/rth9580wf01/MAINTAINERS
  create mode 100644 board/resideo/rth9580wf01/Makefile
@@ -39,224 +68,6 @@ index c6710826a0..92df9b3c83 100644
  dtb-$(CONFIG_TARGET_SAM9X60EK) += sam9x60ek.dtb
  
  dtb-$(CONFIG_TARGET_AT91SAM9N12EK) += at91sam9n12ek.dtb
-diff --git a/arch/arm/dts/rth9580wf01.dts b/arch/arm/dts/rth9580wf01.dts
-new file mode 100644
-index 0000000000..df726a05db
---- /dev/null
-+++ b/arch/arm/dts/rth9580wf01.dts
-@@ -0,0 +1,129 @@
-+/*
-+ * rth9580wf01.dts - Device Tree file for RTH9580WF01 Thermostat Board
-+ *
-+ * Licensed under GPLv2 or later.
-+ */
-+/dts-v1/;
-+#include "rth9580wf01.dtsi"
-+
-+
-+/ {
-+	model = "Resideo RTH9580WF01";
-+	compatible = "resideo,rth9580wf01", "atmel,at91sam9x5", "atmel,at91sam9";
-+
-+	chosen {
-+		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
-+		stdout-path = "serial0:115200n8";
-+		u-boot,dm-pre-reloc;
-+	};
-+
-+	ahb {
-+		apb {
-+			i2c0: i2c@f8010000 {
-+				status = "okay";
-+			};
-+
-+			usart0: serial@f801c000 {
-+				status = "okay";
-+			};
-+
-+			hlcdc: hlcdc@f8038000 {
-+				status = "okay";
-+				u-boot,dm-pre-reloc;
-+			};
-+
-+			spi0: spi@f0000000 {
-+				cs-gpios = <&pioA 14 0>, <0>, <0>, <0>;
-+				status = "okay";
-+				u-boot,dm-pre-reloc;
-+
-+				spi_flash@0 {
-+					#address-cells = <1>;
-+					#size-cells = <1>;
-+					compatible = "jedec,spi-nor";
-+					reg = <0>;
-+					spi-max-frequency = <50000000>;
-+					m25p,fast-read;
-+
-+					spl@0 {
-+						label = "spl";
-+						reg = <0x0 0x8000>;
-+					};
-+					uenv1@8000 {
-+						label = "uenv1";
-+						reg = <0x8000 0x4000>;
-+					};
-+					uenv2@c000 {
-+						label = "uenv2";
-+						reg = <0xc000 0x4000>;
-+					};
-+					uboot@10000 {
-+						label = "uboot";
-+						reg = <0x10000 0xb0000>;
-+					};
-+					kernel@c0000 {
-+						label = "kernel";
-+						reg = <0xc0000 0x400000>;
-+					};
-+					rootfs@4c0000 {
-+						label = "rootfs";
-+						reg = <0x4c0000 0x400000>;
-+					};
-+					data@8c0000 {
-+						label = "data";
-+						reg = <0x8c0000 0x740000>;
-+					};
-+				};
-+			};
-+
-+			ssc0: ssc@f0010000 {
-+				status = "okay";
-+			};
-+
-+			dbgu: serial@fffff200 {
-+				u-boot,dm-pre-reloc;
-+				status = "okay";
-+			};
-+
-+			watchdog@fffffe40 {
-+				status = "okay";
-+			};
-+
-+			rtc@fffffeb0 {
-+				status = "okay";
-+			};
-+		};
-+	};
-+
-+	memory {
-+		reg = <0x20000000 0x1000000>;
-+	};
-+
-+	clocks {
-+		slow_xtal {
-+			clock-frequency = <32768>;
-+		};
-+
-+		main_xtal {
-+			clock-frequency = <12000000>;
-+		};
-+	};
-+
-+	leds {
-+		compatible = "gpio-leds";
-+
-+		pb18 {
-+			label = "pb18";
-+			gpios = <&pioB 18 GPIO_ACTIVE_LOW>;
-+			linux,default-trigger = "heartbeat";
-+		};
-+
-+		pd21 {
-+			label = "pd21";
-+			gpios = <&pioD 21 GPIO_ACTIVE_HIGH>;
-+		};
-+	};
-+
-+};
-+
-+
-diff --git a/arch/arm/dts/rth9580wf01.dtsi b/arch/arm/dts/rth9580wf01.dtsi
-new file mode 100644
-index 0000000000..1d82770a0a
---- /dev/null
-+++ b/arch/arm/dts/rth9580wf01.dtsi
-@@ -0,0 +1,77 @@
-+/*
-+ * rth9580wf01.dtsi - Device Tree Include file for RTH9580WF01 Thermostat Board
-+ *
-+ * Licensed under GPLv2 or later.
-+ */
-+
-+#include "at91sam9x5.dtsi"
-+#include "at91sam9x5_lcd.dtsi"
-+#include "at91sam9x5_macb0.dtsi"
-+
-+
-+/ {
-+	model = "Atmel AT91SAM9G35 SoC";
-+	compatible = "atmel,at91sam9g35", "atmel,at91sam9x5";
-+
-+	ahb {
-+		apb {
-+			i2c0: i2c@f8010000 {
-+				qt1070: keyboard@1b {
-+					compatible = "qt1070";
-+					reg = <0x1b>;
-+					interrupt-parent = <&pioA>;
-+					interrupts = <7 0x0>;
-+					pinctrl-names = "default";
-+					pinctrl-0 = <&pinctrl_qt1070_irq>;
-+					wakeup-source;
-+				};
-+			};
-+
-+			hlcdc: hlcdc@f8038000 {
-+				atmel,vl-bpix = <4>;
-+				atmel,guard-time = <1>;
-+				pinctrl-names = "default";
-+				pinctrl-0 = <&pinctrl_lcd_base &pinctrl_lcd_pwm &pinctrl_lcd_rgb888>;
-+
-+				display-timings {
-+					480x272 {
-+						clock-frequency = <9000000>;
-+						hactive = <480>;
-+						vactive = <272>;
-+						hsync-len = <41>;
-+						hfront-porch = <2>;
-+						hback-porch = <2>;
-+						vfront-porch = <2>;
-+						vback-porch = <2>;
-+						vsync-len = <11>;
-+					};
-+				};
-+			};
-+
-+			adc0: adc@f804c000 {
-+				atmel,adc-ts-wires = <4>;
-+				atmel,adc-ts-pressure-threshold = <10000>;
-+				status = "okay";
-+			};
-+
-+			pinctrl@fffff400 {
-+				board {
-+					pinctrl_qt1070_irq: qt1070_irq {
-+						atmel,pins =
-+							<AT91_PIOA 7 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP_DEGLITCH>;
-+					};
-+				};
-+			};
-+
-+			pinctrl@fffff400 {
-+				atmel,mux-mask = <
-+				      /*    A         B          C     */
-+				       0xffffffff 0xffe0399f 0xc000000c  /* pioA */
-+				       0x000406ff 0x00047e3f 0x00000000  /* pioB */
-+				       0xfdffffff 0x00000000 0xb83fffff  /* pioC */
-+				       0x003fffff 0x003f8000 0x00000000  /* pioD */
-+				      >;
-+			};
-+		};
-+	};
-+};
 diff --git a/arch/arm/mach-at91/Kconfig b/arch/arm/mach-at91/Kconfig
 index c78a308f48..69e442de89 100644
 --- a/arch/arm/mach-at91/Kconfig
@@ -294,14 +105,6 @@ index c78a308f48..69e442de89 100644
  source "board/bluewater/gurnard/Kconfig"
  source "board/bluewater/snapper9260/Kconfig"
  source "board/calao/usb_a9263/Kconfig"
-diff --git a/board/resideo/common b/board/resideo/common
-new file mode 120000
-index 0000000000..0d3c28fa07
---- /dev/null
-+++ b/board/resideo/common
-@@ -0,0 +1 @@
-+../atmel/common
-\ No newline at end of file
 diff --git a/board/resideo/rth9580wf01/Kconfig b/board/resideo/rth9580wf01/Kconfig
 new file mode 100644
 index 0000000000..015b7c9601
@@ -354,26 +157,29 @@ index 0000000000..5115859e5f
 +obj-y += rth9580wf01.o
 diff --git a/board/resideo/rth9580wf01/rth9580wf01.c b/board/resideo/rth9580wf01/rth9580wf01.c
 new file mode 100644
-index 0000000000..dca0f20302
+index 0000000000..95c7292712
 --- /dev/null
 +++ b/board/resideo/rth9580wf01/rth9580wf01.c
-@@ -0,0 +1,74 @@
+@@ -0,0 +1,139 @@
 +// SPDX-License-Identifier: GPL-2.0+
 +/*
 + * Copyright (C) 2012 Atmel Corporation
 + */
 +
 +#include <common.h>
++#include <env.h>
++#include <dm.h>
 +#include <init.h>
-+#include <asm/io.h>
-+#include <asm/arch/at91sam9x5_matrix.h>
-+#include <asm/arch/at91sam9_smc.h>
 +#include <asm/arch/at91_common.h>
-+#include <asm/arch/at91_rstc.h>
 +#include <asm/arch/clk.h>
-+#include <asm/arch/gpio.h>
 +#include <debug_uart.h>
 +#include <asm/mach-types.h>
++#include <atmel_lcd.h>
++#include <version.h>
++#include <video.h>
++#ifdef CONFIG_DM_VIDEO
++#include <video_console.h>
++#endif
 +
 +DECLARE_GLOBAL_DATA_PTR;
 +
@@ -382,7 +188,69 @@ index 0000000000..dca0f20302
 + * Miscelaneous platform dependent initialisations
 + */
 +
-+void at91_prepare_cpu_var(void);
++#if defined(CONFIG_DM_VIDEO) && defined(CONFIG_ATMEL_HLCD)
++int at91_video_show_board_info(void)
++{
++	struct video_priv *vid;
++	struct vidconsole_priv *priv;
++//	ulong dram_size, nand_size;
++	int i, j;
++	u32 len = 0;
++	char b;
++	char *p;
++	char buf[255];
++	char *corp = "Microchip Technology Inc.\n";
++	char temp[32];
++	struct udevice *dev, *con;
++	const char *s;
++	vidinfo_t logo_info;
++	int ret;
++
++	len += sprintf(&buf[len], "%s\n", U_BOOT_VERSION);
++	memcpy(&buf[len], corp, strlen(corp));
++	len += strlen(corp);
++	len += sprintf(&buf[len], "%s CPU at %s MHz\n", get_cpu_name(),
++			strmhz(temp, get_cpu_clk_rate()));
++
++	len += sprintf(&buf[len], "%d MB SDRAM, 16 MB Flash\n",
++			CONFIG_SYS_SDRAM_SIZE >> 20);
++
++	ret = uclass_get_device(UCLASS_VIDEO, 0, &dev);
++	if (ret)
++		return ret;
++
++	/* rotate the logo 180 degrees, then move to lower-right */
++	microchip_logo_info(&logo_info);
++	p = (char*)logo_info.logo_addr;
++	i = *(int*)(logo_info.logo_addr + 10);
++	j = logo_info.logo_width * logo_info.logo_height + i - 1;
++	for( ; i<j; i++, j--) {
++		b = p[i];
++		p[i] = p[j];
++		p[j] = b;
++	}
++
++	vid = dev_get_uclass_priv(dev);
++	ret = video_bmp_display(dev, logo_info.logo_addr,
++				vid->xsize - logo_info.logo_width - 4,
++				vid->ysize - logo_info.logo_height - 2,
++				false);
++	if (ret)
++		return ret;
++
++	ret = uclass_get_device(UCLASS_VIDEO_CONSOLE, 0, &con);
++	if (ret)
++		return ret;
++
++	priv = dev_get_uclass_priv(con);
++	vidconsole_position_cursor(con, 0, (logo_info.logo_height +
++				   priv->y_charsize - 1) / priv->y_charsize);
++	for (s = buf, i = 0; i < len; s++, i++)
++		vidconsole_put_char(con, *s);
++
++	return 0;
++}
++#endif
 +
 +#ifdef CONFIG_BOARD_LATE_INIT
 +int board_late_init(void)
@@ -390,7 +258,7 @@ index 0000000000..dca0f20302
 +#ifdef CONFIG_DM_VIDEO
 +	at91_video_show_board_info();
 +#endif
-+	at91_prepare_cpu_var();
++	env_set("cpu", get_cpu_name());
 +	return 0;
 +}
 +#endif
@@ -434,10 +302,10 @@ index 0000000000..dca0f20302
 +}
 diff --git a/configs/rth9580wf01_spiflash_defconfig b/configs/rth9580wf01_spiflash_defconfig
 new file mode 100644
-index 0000000000..b092b51187
+index 0000000000..aa2bbbeb15
 --- /dev/null
 +++ b/configs/rth9580wf01_spiflash_defconfig
-@@ -0,0 +1,81 @@
+@@ -0,0 +1,82 @@
 +CONFIG_ARM=y
 +CONFIG_ARCH_AT91=y
 +CONFIG_SYS_TEXT_BASE=0x20f50000
@@ -517,8 +385,21 @@ index 0000000000..b092b51187
 +CONFIG_DM_VIDEO=y
 +# CONFIG_VIDEO_BPP8 is not set
 +# CONFIG_VIDEO_BPP32 is not set
++CONFIG_CONSOLE_ROTATION=y
 +CONFIG_ATMEL_HLCD=y
 +CONFIG_LZMA=y
+diff --git a/drivers/video/atmel_hlcdfb.c b/drivers/video/atmel_hlcdfb.c
+index c7b59b71e1..5b038e4c6c 100644
+--- a/drivers/video/atmel_hlcdfb.c
++++ b/drivers/video/atmel_hlcdfb.c
+@@ -495,6 +495,7 @@ static int atmel_hlcdc_probe(struct udevice *dev)
+ 	uc_priv->xsize = priv->timing.hactive.typ;
+ 	uc_priv->ysize = priv->timing.vactive.typ;
+ 	uc_priv->bpix = priv->vl_bpix;
++	uc_priv->rot = dev_read_u32_default(dev, "rotate", 0);
+ 
+ 	/* Enable flushing if we enabled dcache */
+ 	video_set_flush_dcache(dev, true);
 diff --git a/include/configs/rth9580wf01.h b/include/configs/rth9580wf01.h
 new file mode 100644
 index 0000000000..bb1117569e
@@ -593,334 +474,96 @@ index 0000000000..bb1117569e
 2.20.1
 
 
-From 87c82222eb7047cfd6345043e1569d8bb7e05012 Mon Sep 17 00:00:00 2001
+From fc761e300f9358f02bd8d2bdf711b4432ee8a415 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
-Date: Thu, 29 Apr 2021 14:09:37 -0400
-Subject: [PATCH 2/5] add screen rotation to device tree
+Date: Fri, 30 Apr 2021 06:53:50 -0400
+Subject: [PATCH 3/3] resideo rth9580wf01 thermostat device tree
 
 ---
- drivers/video/atmel_hlcdfb.c | 1 +
- 1 file changed, 1 insertion(+)
-
-diff --git a/drivers/video/atmel_hlcdfb.c b/drivers/video/atmel_hlcdfb.c
-index c7b59b71e1..5b038e4c6c 100644
---- a/drivers/video/atmel_hlcdfb.c
-+++ b/drivers/video/atmel_hlcdfb.c
-@@ -495,6 +495,7 @@ static int atmel_hlcdc_probe(struct udevice *dev)
- 	uc_priv->xsize = priv->timing.hactive.typ;
- 	uc_priv->ysize = priv->timing.vactive.typ;
- 	uc_priv->bpix = priv->vl_bpix;
-+	uc_priv->rot = dev_read_u32_default(dev, "rotate", 0);
- 
- 	/* Enable flushing if we enabled dcache */
- 	video_set_flush_dcache(dev, true);
--- 
-2.20.1
-
-
-From 0f70bc9d70254584b8d6c80f59e6781107eed145 Mon Sep 17 00:00:00 2001
-From: John Clark <inindev@gmail.com>
-Date: Thu, 29 Apr 2021 14:10:29 -0400
-Subject: [PATCH 3/5] fix y_offset bug
-
----
- lib/at91/at91.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/lib/at91/at91.c b/lib/at91/at91.c
-index 048597690b..f594864808 100644
---- a/lib/at91/at91.c
-+++ b/lib/at91/at91.c
-@@ -15,7 +15,7 @@ void atmel_logo_info(vidinfo_t *info)
- 	info->logo_width = ATMEL_LOGO_8BPP_WIDTH;
- 	info->logo_height = ATMEL_LOGO_8BPP_HEIGHT;
- 	info->logo_x_offset = ATMEL_LOGO_8BPP_X_OFFSET;
--	info->logo_y_offset = ATMEL_LOGO_8BPP_X_OFFSET;
-+	info->logo_y_offset = ATMEL_LOGO_8BPP_Y_OFFSET;
- 	info->logo_addr = (u_long)atmel_logo_8bpp;
- }
- 
-@@ -24,6 +24,6 @@ void microchip_logo_info(vidinfo_t *info)
- 	info->logo_width = MICROCHIP_LOGO_8BPP_WIDTH;
- 	info->logo_height = MICROCHIP_LOGO_8BPP_HEIGHT;
- 	info->logo_x_offset = MICROCHIP_LOGO_8BPP_X_OFFSET;
--	info->logo_y_offset = MICROCHIP_LOGO_8BPP_X_OFFSET;
-+	info->logo_y_offset = MCIROCHIP_LOGO_8BPP_Y_OFFSET;
- 	info->logo_addr = (u_long)microchip_logo_8bpp;
- }
--- 
-2.20.1
-
-
-From e2814b36953b502ff8882ee781458b791de090bc Mon Sep 17 00:00:00 2001
-From: John Clark <inindev@gmail.com>
-Date: Thu, 29 Apr 2021 15:32:56 -0400
-Subject: [PATCH 4/5] move video from common to device
-
----
- board/resideo/common                      |  1 -
- board/resideo/rth9580wf01/Makefile        |  1 +
- board/resideo/rth9580wf01/rth9580wf01.c   |  7 ++
- board/resideo/rth9580wf01/video_display.c | 92 +++++++++++++++++++++++
- 4 files changed, 100 insertions(+), 1 deletion(-)
- delete mode 120000 board/resideo/common
- create mode 100644 board/resideo/rth9580wf01/video_display.c
-
-diff --git a/board/resideo/common b/board/resideo/common
-deleted file mode 120000
-index 0d3c28fa07..0000000000
---- a/board/resideo/common
-+++ /dev/null
-@@ -1 +0,0 @@
--../atmel/common
-\ No newline at end of file
-diff --git a/board/resideo/rth9580wf01/Makefile b/board/resideo/rth9580wf01/Makefile
-index 5115859e5f..932d4bd389 100644
---- a/board/resideo/rth9580wf01/Makefile
-+++ b/board/resideo/rth9580wf01/Makefile
-@@ -12,3 +12,4 @@
- # Atmel corporation <www.atmel.com>
- 
- obj-y += rth9580wf01.o
-+obj-$(CONFIG_DM_VIDEO) += video_display.o
-diff --git a/board/resideo/rth9580wf01/rth9580wf01.c b/board/resideo/rth9580wf01/rth9580wf01.c
-index dca0f20302..81f3227256 100644
---- a/board/resideo/rth9580wf01/rth9580wf01.c
-+++ b/board/resideo/rth9580wf01/rth9580wf01.c
-@@ -4,6 +4,7 @@
-  */
- 
- #include <common.h>
-+#include <env.h>
- #include <init.h>
- #include <asm/io.h>
- #include <asm/arch/at91sam9x5_matrix.h>
-@@ -22,6 +23,7 @@ DECLARE_GLOBAL_DATA_PTR;
-  * Miscelaneous platform dependent initialisations
-  */
- 
-+char *get_cpu_name(void);
- void at91_prepare_cpu_var(void);
- 
- #ifdef CONFIG_BOARD_LATE_INIT
-@@ -72,3 +74,8 @@ int dram_init(void)
- 					CONFIG_SYS_SDRAM_SIZE);
- 	return 0;
- }
-+
-+void at91_prepare_cpu_var(void)
-+{
-+	env_set("cpu", get_cpu_name());
-+}
-diff --git a/board/resideo/rth9580wf01/video_display.c b/board/resideo/rth9580wf01/video_display.c
-new file mode 100644
-index 0000000000..bdf37dbcc3
---- /dev/null
-+++ b/board/resideo/rth9580wf01/video_display.c
-@@ -0,0 +1,92 @@
-+// SPDX-License-Identifier: GPL-2.0+
-+/*
-+ * Copyright (C) 2017 Microchip
-+ *		      Wenyou Yang <wenyou.yang@microchip.com>
-+ */
-+
-+#include <common.h>
-+#include <atmel_lcd.h>
-+#include <dm.h>
-+#include <init.h>
-+#include <nand.h>
-+#include <version.h>
-+#include <video.h>
-+#include <video_console.h>
-+#include <vsprintf.h>
-+#include <asm/global_data.h>
-+#include <asm/io.h>
-+#include <asm/arch/clk.h>
-+
-+DECLARE_GLOBAL_DATA_PTR;
-+
-+int at91_video_show_board_info(void)
-+{
-+	struct video_priv *vid;
-+	struct vidconsole_priv *priv;
-+	ulong dram_size, nand_size;
-+	int i, j;
-+	u32 len = 0;
-+	char b;
-+	char *p;
-+	char buf[255];
-+	char *corp = "Microchip Technology Inc.\n";
-+	char temp[32];
-+	struct udevice *dev, *con;
-+	const char *s;
-+	vidinfo_t logo_info;
-+	int ret;
-+
-+	len += sprintf(&buf[len], "%s\n", U_BOOT_VERSION);
-+	memcpy(&buf[len], corp, strlen(corp));
-+	len += strlen(corp);
-+	len += sprintf(&buf[len], "%s CPU at %s MHz\n", get_cpu_name(),
-+			strmhz(temp, get_cpu_clk_rate()));
-+
-+	dram_size = 0;
-+	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++)
-+		dram_size += gd->bd->bi_dram[i].size;
-+
-+	nand_size = 0;
-+#ifdef CONFIG_NAND_ATMEL
-+	for (i = 0; i < CONFIG_SYS_MAX_NAND_DEVICE; i++)
-+		nand_size += get_nand_dev_by_index(i)->size;
-+#endif
-+
-+	len += sprintf(&buf[len], "%ld MB SDRAM, %ld MB NAND\n",
-+			dram_size >> 20, nand_size >> 20);
-+
-+	ret = uclass_get_device(UCLASS_VIDEO, 0, &dev);
-+	if (ret)
-+		return ret;
-+
-+	/* rotate the logo 180 degrees, then move to lower-right */
-+	microchip_logo_info(&logo_info);
-+	p = (char*)logo_info.logo_addr;
-+	i = *(int*)(logo_info.logo_addr + 10);
-+	j = logo_info.logo_width * logo_info.logo_height + i - 1;
-+	for( ; i<j; i++, j--) {
-+		b = p[i];
-+		p[i] = p[j];
-+		p[j] = b;
-+	}
-+
-+	vid = dev_get_uclass_priv(dev);
-+	ret = video_bmp_display(dev, logo_info.logo_addr,
-+				vid->xsize - logo_info.logo_width,
-+				vid->ysize - logo_info.logo_height,
-+				false);
-+	if (ret)
-+		return ret;
-+
-+	ret = uclass_get_device(UCLASS_VIDEO_CONSOLE, 0, &con);
-+	if (ret)
-+		return ret;
-+
-+	priv = dev_get_uclass_priv(con);
-+	vidconsole_position_cursor(con, 0, (logo_info.logo_height +
-+				   priv->y_charsize - 1) / priv->y_charsize);
-+	for (s = buf, i = 0; i < len; s++, i++)
-+		vidconsole_put_char(con, *s);
-+
-+	return 0;
-+}
--- 
-2.20.1
-
-
-From 5740f31fb8d537c8a1baf22c43447eaaffbf965c Mon Sep 17 00:00:00 2001
-From: John Clark <inindev@gmail.com>
-Date: Thu, 29 Apr 2021 15:34:29 -0400
-Subject: [PATCH 5/5] dt cleanup and consolidation
-
----
- arch/arm/dts/rth9580wf01.dts  |  102 ++-
- arch/arm/dts/rth9580wf01.dtsi | 1303 +++++++++++++++++++++++++++++++--
- 2 files changed, 1333 insertions(+), 72 deletions(-)
+ arch/arm/dts/rth9580wf01.dts  |  154 ++++
+ arch/arm/dts/rth9580wf01.dtsi | 1293 +++++++++++++++++++++++++++++++++
+ 2 files changed, 1447 insertions(+)
+ create mode 100644 arch/arm/dts/rth9580wf01.dts
+ create mode 100644 arch/arm/dts/rth9580wf01.dtsi
 
 diff --git a/arch/arm/dts/rth9580wf01.dts b/arch/arm/dts/rth9580wf01.dts
-index df726a05db..6cc8f12df2 100644
---- a/arch/arm/dts/rth9580wf01.dts
+new file mode 100644
+index 0000000000..f77c94579d
+--- /dev/null
 +++ b/arch/arm/dts/rth9580wf01.dts
-@@ -5,33 +5,21 @@
-  */
- /dts-v1/;
- #include "rth9580wf01.dtsi"
--
+@@ -0,0 +1,154 @@
++/*
++ * rth9580wf01.dts - Device Tree file for RTH9580WF01 Thermostat Board
++ *
++ * Licensed under GPLv2 or later.
++ */
++/dts-v1/;
++#include "rth9580wf01.dtsi"
 +#include "at91sam9x5_lcd.dtsi"
 +#include "at91sam9x5_macb0.dtsi"
- 
- / {
- 	model = "Resideo RTH9580WF01";
--	compatible = "resideo,rth9580wf01", "atmel,at91sam9x5", "atmel,at91sam9";
-+	compatible = "resideo,rth9580wf01"
- 
- 	chosen {
--		bootargs = "rootfstype=squashfs,jffs2 noinitrd console=ttyS0,115200";
++
++/ {
++	model = "Resideo RTH9580WF01 Thermostat Board";
++	compatible = "resideo,rth9580wf01", "atmel,at91sam9x5", "atmel,at91sam9g35", "atmel,at91sam9";
++
++	chosen {
 +		bootargs = "console=ttyS0,115200 console=tty0 rootfstype=squashfs,jffs2 noinitrd fbcon=rotate:2";
- 		stdout-path = "serial0:115200n8";
- 		u-boot,dm-pre-reloc;
- 	};
- 
- 	ahb {
- 		apb {
--			i2c0: i2c@f8010000 {
--				status = "okay";
--			};
--
--			usart0: serial@f801c000 {
--				status = "okay";
--			};
--
--			hlcdc: hlcdc@f8038000 {
--				status = "okay";
--				u-boot,dm-pre-reloc;
--			};
--
- 			spi0: spi@f0000000 {
- 				cs-gpios = <&pioA 14 0>, <0>, <0>, <0>;
- 				status = "okay";
-@@ -45,31 +33,31 @@
- 					spi-max-frequency = <50000000>;
- 					m25p,fast-read;
- 
--					spl@0 {
++		stdout-path = "serial0:115200n8";
++		u-boot,dm-pre-reloc;
++	};
++
++	ahb {
++		apb {
++			spi0: spi@f0000000 {
++				cs-gpios = <&pioA 14 0>, <0>, <0>, <0>;
++				status = "okay";
++				u-boot,dm-pre-reloc;
++
++				spi_flash@0 {
++					#address-cells = <1>;
++					#size-cells = <1>;
++					compatible = "jedec,spi-nor";
++					reg = <0>;
++					spi-max-frequency = <50000000>;
++					m25p,fast-read;
++
 +					partition@0 {
- 						label = "spl";
- 						reg = <0x0 0x8000>;
- 					};
--					uenv1@8000 {
++						label = "spl";
++						reg = <0x0 0x8000>;
++					};
 +					partition@8000 {
- 						label = "uenv1";
- 						reg = <0x8000 0x4000>;
- 					};
--					uenv2@c000 {
++						label = "uenv1";
++						reg = <0x8000 0x4000>;
++					};
 +					partition@c000 {
- 						label = "uenv2";
- 						reg = <0xc000 0x4000>;
- 					};
--					uboot@10000 {
++						label = "uenv2";
++						reg = <0xc000 0x4000>;
++					};
 +					partition@10000 {
- 						label = "uboot";
- 						reg = <0x10000 0xb0000>;
- 					};
--					kernel@c0000 {
++						label = "uboot";
++						reg = <0x10000 0xb0000>;
++					};
 +					partition@c0000 {
- 						label = "kernel";
- 						reg = <0xc0000 0x400000>;
- 					};
--					rootfs@4c0000 {
++						label = "kernel";
++						reg = <0xc0000 0x400000>;
++					};
 +					partition@4c0000 {
- 						label = "rootfs";
- 						reg = <0x4c0000 0x400000>;
- 					};
--					data@8c0000 {
++						label = "rootfs";
++						reg = <0x4c0000 0x400000>;
++					};
 +					partition@8c0000 {
- 						label = "data";
- 						reg = <0x8c0000 0x740000>;
- 					};
-@@ -80,11 +68,77 @@
- 				status = "okay";
- 			};
- 
++						label = "data";
++						reg = <0x8c0000 0x740000>;
++					};
++				};
++			};
++
++			ssc0: ssc@f0010000 {
++				status = "okay";
++			};
++
 +			i2c0: i2c@f8010000 {
 +				status = "okay";
-+
-+				qt1070: keyboard@1b {
-+					compatible = "qt1070";
-+					reg = <0x1b>;
-+					interrupt-parent = <&pioA>;
-+					interrupts = <7 0x0>;
-+					pinctrl-names = "default";
-+					pinctrl-0 = <&pinctrl_qt1070_irq>;
-+					wakeup-source;
-+				};
 +			};
 +
 +			usart0: serial@f801c000 {
@@ -958,61 +601,73 @@ index df726a05db..6cc8f12df2 100644
 +				status = "okay";
 +			};
 +
- 			dbgu: serial@fffff200 {
- 				u-boot,dm-pre-reloc;
- 				status = "okay";
- 			};
- 
-+			pinctrl@fffff400 {
-+				atmel,mux-mask = <
-+				      /*    A         B          C     */
-+				       0xffffffff 0xffe0399f 0xc000000c  /* pioA */
-+				       0x000406ff 0x00047e3f 0x00000000  /* pioB */
-+				       0xfdffffff 0x00000000 0xb83fffff  /* pioC */
-+				       0x003fffff 0x003f8000 0x00000000  /* pioD */
-+				      >;
-+
-+				board {
-+					pinctrl_qt1070_irq: qt1070_irq {
-+						atmel,pins =
-+							<AT91_PIOA 7 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP_DEGLITCH>;
-+					};
-+				};
++			dbgu: serial@fffff200 {
++				u-boot,dm-pre-reloc;
++				status = "okay";
 +			};
 +
- 			watchdog@fffffe40 {
- 				status = "okay";
- 			};
-@@ -125,5 +179,3 @@
- 	};
- 
- };
--
--
++			watchdog: watchdog@fffffe40 {
++				status = "okay";
++			};
++
++			rtc@fffffeb0 {
++				status = "okay";
++			};
++		};
++	};
++
++	memory {
++		reg = <0x20000000 0x1000000>;
++	};
++
++	clocks {
++		slow_xtal {
++			clock-frequency = <32768>;
++		};
++
++		main_xtal {
++			clock-frequency = <12000000>;
++		};
++	};
++
++	leds {
++		compatible = "gpio-leds";
++
++		pb18 {
++			label = "pb18";
++			gpios = <&pioB 18 GPIO_ACTIVE_LOW>;
++			linux,default-trigger = "heartbeat";
++		};
++
++		pd21 {
++			label = "pd21";
++			gpios = <&pioD 21 GPIO_ACTIVE_HIGH>;
++		};
++	};
++
++};
 diff --git a/arch/arm/dts/rth9580wf01.dtsi b/arch/arm/dts/rth9580wf01.dtsi
-index 1d82770a0a..c8a08ada0a 100644
---- a/arch/arm/dts/rth9580wf01.dtsi
+new file mode 100644
+index 0000000000..c36c9857c0
+--- /dev/null
 +++ b/arch/arm/dts/rth9580wf01.dtsi
-@@ -4,74 +4,1283 @@
-  * Licensed under GPLv2 or later.
-  */
- 
--#include "at91sam9x5.dtsi"
--#include "at91sam9x5_lcd.dtsi"
--#include "at91sam9x5_macb0.dtsi"
--
+@@ -0,0 +1,1293 @@
++/*
++ * rth9580wf01.dtsi - Device Tree Include file for RTH9580WF01 Thermostat Board
++ *
++ * Licensed under GPLv2 or later.
++ */
++
 +#include "skeleton.dtsi"
 +#include <dt-bindings/dma/at91.h>
 +#include <dt-bindings/pinctrl/at91.h>
 +#include <dt-bindings/interrupt-controller/irq.h>
 +#include <dt-bindings/gpio/gpio.h>
 +#include <dt-bindings/clock/at91.h>
- 
- / {
--	model = "Atmel AT91SAM9G35 SoC";
--	compatible = "atmel,at91sam9g35", "atmel,at91sam9x5";
-+        model = "Resideo RTH9580WF01";
-+        compatible = "resideo,rth9580wf01";
++
++/ {
++        model = "Resideo RTH9580WF01 Thermostat Board";
++        compatible = "resideo,rth9580wf01", "atmel,at91sam9x5", "atmel,at91sam9g35", "atmel,at91sam9";
 +	interrupt-parent = <&aic>;
 +
 +	aliases {
@@ -1065,25 +720,15 @@ index 1d82770a0a..c8a08ada0a 100644
 +		compatible = "mmio-sram";
 +		reg = <0x00300000 0x8000>;
 +	};
- 
- 	ahb {
++
++	ahb {
 +		compatible = "simple-bus";
 +		#address-cells = <1>;
 +		#size-cells = <1>;
 +		ranges;
 +		u-boot,dm-pre-reloc;
 +
- 		apb {
--			i2c0: i2c@f8010000 {
--				qt1070: keyboard@1b {
--					compatible = "qt1070";
--					reg = <0x1b>;
--					interrupt-parent = <&pioA>;
--					interrupts = <7 0x0>;
--					pinctrl-names = "default";
--					pinctrl-0 = <&pinctrl_qt1070_irq>;
--					wakeup-source;
--				};
++		apb {
 +			compatible = "simple-bus";
 +			#address-cells = <1>;
 +			#size-cells = <1>;
@@ -1096,13 +741,8 @@ index 1d82770a0a..c8a08ada0a 100644
 +				interrupt-controller;
 +				reg = <0xfffff000 0x200>;
 +				atmel,external-irqs = <31>;
- 			};
- 
--			hlcdc: hlcdc@f8038000 {
--				atmel,vl-bpix = <4>;
--				atmel,guard-time = <1>;
--				pinctrl-names = "default";
--				pinctrl-0 = <&pinctrl_lcd_base &pinctrl_lcd_pwm &pinctrl_lcd_rgb888>;
++			};
++
 +			ramc0: ramc@ffffe800 {
 +				compatible = "atmel,at91sam9g45-ddramc";
 +				reg = <0xffffe800 0x200>;
@@ -1374,29 +1014,14 @@ index 1d82770a0a..c8a08ada0a 100644
 +						#clock-cells = <0>;
 +						reg = <26>;
 +					};
- 
--				display-timings {
--					480x272 {
--						clock-frequency = <9000000>;
--						hactive = <480>;
--						vactive = <272>;
--						hsync-len = <41>;
--						hfront-porch = <2>;
--						hback-porch = <2>;
--						vfront-porch = <2>;
--						vback-porch = <2>;
--						vsync-len = <11>;
++
 +					ssc0_clk: ssc0_clk@28 {
 +						#clock-cells = <0>;
 +						reg = <28>;
- 					};
- 				};
- 			};
- 
--			adc0: adc@f804c000 {
--				atmel,adc-ts-wires = <4>;
--				atmel,adc-ts-pressure-threshold = <10000>;
--				status = "okay";
++					};
++				};
++			};
++
 +			rstc@fffffe00 {
 +				compatible = "atmel,at91sam9g45-rstc";
 +				reg = <0xfffffe00 0x10>;
@@ -1472,11 +1097,9 @@ index 1d82770a0a..c8a08ada0a 100644
 +				#dma-cells = <2>;
 +				clocks = <&dma1_clk>;
 +				clock-names = "dma_clk";
- 			};
- 
- 			pinctrl@fffff400 {
--				board {
--					pinctrl_qt1070_irq: qt1070_irq {
++			};
++
++			pinctrl@fffff400 {
 +				#address-cells = <1>;
 +				#size-cells = <1>;
 +				compatible = "atmel,at91sam9x5-pinctrl", "atmel,at91rm9200-pinctrl", "simple-bus";
@@ -1486,6 +1109,13 @@ index 1d82770a0a..c8a08ada0a 100644
 +				       0xfffff800 0x200		/* pioC */
 +				       0xfffffa00 0x200		/* pioD */
 +				       >;
++				atmel,mux-mask = <
++				      /*    A         B          C     */
++				       0xffffffff 0xffe0399f 0xc000000c  /* pioA */
++				       0x000406ff 0x00047e3f 0x00000000  /* pioB */
++				       0xfdffffff 0x00000000 0xb83fffff  /* pioC */
++				       0x003fffff 0x003f8000 0x00000000  /* pioD */
++				      >;
 +				u-boot,dm-pre-reloc;
 +
 +				/* shared pinctrl settings */
@@ -1745,8 +1375,7 @@ index 1d82770a0a..c8a08ada0a 100644
 +					};
 +
 +					pinctrl_pwm0_pwm1_0: pwm0_pwm1-0 {
- 						atmel,pins =
--							<AT91_PIOA 7 AT91_PERIPH_GPIO AT91_PINCTRL_PULL_UP_DEGLITCH>;
++						atmel,pins =
 +							<AT91_PIOB 12 AT91_PERIPH_B AT91_PINCTRL_NONE>;
 +					};
 +					pinctrl_pwm0_pwm1_1: pwm0_pwm1-1 {
@@ -1850,18 +1479,10 @@ index 1d82770a0a..c8a08ada0a 100644
 +
 +					pinctrl_tcb1_tiob2: tcb1_tiob2-0 {
 +						atmel,pins = <AT91_PIOC 13 AT91_PERIPH_C AT91_PINCTRL_NONE>;
- 					};
- 				};
- 			};
- 
--			pinctrl@fffff400 {
--				atmel,mux-mask = <
--				      /*    A         B          C     */
--				       0xffffffff 0xffe0399f 0xc000000c  /* pioA */
--				       0x000406ff 0x00047e3f 0x00000000  /* pioB */
--				       0xfdffffff 0x00000000 0xb83fffff  /* pioC */
--				       0x003fffff 0x003f8000 0x00000000  /* pioD */
--				      >;
++					};
++				};
++			};
++
 +			pioA: gpio@fffff400 {
 +				compatible = "atmel,at91sam9x5-gpio", "atmel,at91rm9200-gpio";
 +				reg = <0xfffff400 0x200>;
@@ -2235,8 +1856,8 @@ index 1d82770a0a..c8a08ada0a 100644
 +				clocks = <&pwm_clk>;
 +				#pwm-cells = <3>;
 +				status = "disabled";
- 			};
- 		};
++			};
++		};
 +
 +		nand0: nand@40000000 {
 +			compatible = "atmel,at91rm9200-nand";
@@ -2322,8 +1943,8 @@ index 1d82770a0a..c8a08ada0a 100644
 +		pinctrl-names = "default";
 +		pinctrl-0 = <&pinctrl_i2c_gpio2>;
 +		status = "disabled";
- 	};
- };
++	};
++};
 -- 
 2.20.1
 
