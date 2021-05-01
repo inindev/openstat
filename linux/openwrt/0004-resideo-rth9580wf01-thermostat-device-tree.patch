@@ -1,7 +1,7 @@
 From 779f0c778d59630b5f39e09d938dbafaec6e62dd Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Fri, 30 Apr 2021 10:58:50 -0400
-Subject: [PATCH 4/4] resideo rth9580wf01 thermostat device tree
+Subject: [PATCH 4/5] resideo rth9580wf01 thermostat device tree
 
 ---
  .../files/arch/arm/boot/dts/rth9580wf01.dts   |  154 ++

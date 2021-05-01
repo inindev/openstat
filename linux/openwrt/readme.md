@@ -25,6 +25,7 @@ git am ../openstat/linux/openwrt/0001-at91bootstrap-target-for-resideo-rth9580wf
 git am ../openstat/linux/openwrt/0002-u-boot-target-for-resideo-rth9580wf01-board.patch
 git am ../openstat/linux/openwrt/0003-support-for-resideo-rth9580wf01-board.patch
 git am ../openstat/linux/openwrt/0004-resideo-rth9580wf01-thermostat-device-tree.patch
+git am ../openstat/linux/openwrt/0005-update-u-boot-at91-from-linux4sam_5.8-to-linux4sam-2.patch
 
 cp ../openstat/linux/openwrt/defconfig .config
 make defconfig

@@ -1,7 +1,7 @@
 From 50d2be1e7d2d8a851fee9b40986fee499b56eda5 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Sat, 10 Apr 2021 07:57:20 -0400
-Subject: [PATCH 3/4] support for resideo rth9580wf01 board
+Subject: [PATCH 3/5] support for resideo rth9580wf01 board
 
 ---
  ...s-for-resideo-rth9580wf01-thermostat.patch | 18 ++++-----

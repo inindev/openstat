@@ -1,7 +1,7 @@
 From 91898540547c73c3260a56617ec03001d2a34da4 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Tue, 20 Apr 2021 12:29:35 -0400
-Subject: [PATCH 1/4] at91bootstrap target for resideo rth9580wf01 board
+Subject: [PATCH 1/5] at91bootstrap target for resideo rth9580wf01 board
 
 ---
  package/boot/at91bootstrap/Makefile           |   9 +-

@@ -1,7 +1,7 @@
 From 249b744668c2926661e022388842552361f33a39 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
 Date: Fri, 23 Apr 2021 00:12:17 -0400
-Subject: [PATCH 2/4] u-boot target for resideo rth9580wf01 board
+Subject: [PATCH 2/5] u-boot target for resideo rth9580wf01 board
 
 ---
  package/boot/uboot-at91/Makefile              |    9 +-
